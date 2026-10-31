@@ -1,0 +1,139 @@
+[
+  {
+    "name": "empty",
+    "bytes": [],
+    "decoded": ""
+  },
+  {
+    "name": "ascii",
+    "bytes": [
+      97,
+      98
+    ],
+    "decoded": "ab"
+  },
+  {
+    "name": "one leading BOM is removed",
+    "bytes": [
+      239,
+      187,
+      191,
+      97
+    ],
+    "decoded": "a"
+  },
+  {
+    "name": "a BOM alone decodes to the empty string",
+    "bytes": [
+      239,
+      187,
+      191
+    ],
+    "decoded": ""
+  },
+  {
+    "name": "only ONE leading BOM is removed",
+    "bytes": [
+      239,
+      187,
+      191,
+      239,
+      187,
+      191,
+      97
+    ],
+    "decoded": "﻿a"
+  },
+  {
+    "name": "a BOM that is not first stays",
+    "bytes": [
+      97,
+      239,
+      187,
+      191
+    ],
+    "decoded": "a﻿"
+  },
+  {
+    "name": "a truncated BOM is one replacement",
+    "bytes": [
+      239,
+      187
+    ],
+    "decoded": "�"
+  },
+  {
+    "name": "a truncated BOM then text",
+    "bytes": [
+      239,
+      187,
+      97
+    ],
+    "decoded": "�a"
+  },
+  {
+    "name": "a BOM before a JSON object",
+    "bytes": [
+      239,
+      187,
+      191,
+      123,
+      125
+    ],
+    "decoded": "{}"
+  },
+  {
+    "name": "a lone continuation byte",
+    "bytes": [
+      128
+    ],
+    "decoded": "�"
+  },
+  {
+    "name": "a truncated four-byte sequence is ONE replacement",
+    "bytes": [
+      240,
+      159,
+      152
+    ],
+    "decoded": "�"
+  },
+  {
+    "name": "an overlong two-byte form is two replacements",
+    "bytes": [
+      192,
+      175
+    ],
+    "decoded": "��"
+  },
+  {
+    "name": "a surrogate encoded in UTF-8 is three replacements",
+    "bytes": [
+      237,
+      160,
+      128
+    ],
+    "decoded": "���"
+  },
+  {
+    "name": "a BOM then an invalid byte",
+    "bytes": [
+      239,
+      187,
+      191,
+      255,
+      97
+    ],
+    "decoded": "�a"
+  },
+  {
+    "name": "astral",
+    "bytes": [
+      240,
+      159,
+      152,
+      128
+    ],
+    "decoded": "😀"
+  }
+]
