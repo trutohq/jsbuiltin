@@ -46,7 +46,8 @@ Moved, with its tests, on 2026-10-31. History stays in the source repositories.
 The plain functions give V8's answers, as Node and workerd run it. Where Bun
 (JavaScriptCore, which runs Envoy) answers differently, an `...On` function
 takes a `Runtime`: `ToLowerCaseOn(RuntimeBun, s)` leaves the 27 code points
-Unicode 16 gave a lowercase form as Bun 1.3.14 does, and
+Unicode 16 gave a lowercase form as Bun 1.3.14 does, `ToUpperCaseOn(RuntimeBun, s)`
+leaves the 55 Unicode 16 and 17 uppercase additions likewise, and
 `EncodeURIComponentOn` / `EncodeURIOn` with `RuntimeBun` throw Bun's message,
 "String contained an illegal UTF-16 sequence.", where V8 says "URI
 malformed". `TestBunContract` holds them to `testdata/bun/`, which
@@ -67,15 +68,18 @@ point that maps and of context-sensitive strings, and `Number`, `parseInt`,
 
 The suite passes when exactly the lines in `testdata/known-differences.txt`
 differ; a new one fails it, and so does a listed one that stops differing.
-Today that is **84**, all one cause (OPEN):
+Today that is **29**, all one cause (OPEN):
 
-- **Case mapping of characters added in Unicode 16 and 17** (29 `toLowerCase`,
-  55 `toUpperCase`; e.g. U+A7CE, U+10D70..U+10D85, U+16EA0..U+16EB8). Node's
-  ICU 78 maps them; `toUpperCase` here is x/text's `cases` (Unicode 15.0.0) and
-  `toLowerCase`'s general path Go's `unicode.ToLower`, which leaves them too.
-  Bun 1.3.14 (Envoy's runtime) does not map them either and agrees with this
-  package on all 9,289 of its answers. workerd's ICU (Truto's runtime) was not
-  measured. Fixing it is a change of behaviour, so it is not part of the move.
+- **Lowercase mapping of characters added in Unicode 16 and 17** (29
+  `toLowerCase`; e.g. U+A7CE, U+16EA0..U+16EB8). Node's ICU 78 maps them; the
+  general path here is Go's `unicode.ToLower`, which leaves the Unicode 17 ones
+  (`unicode17Lowercase`, matching workerd's Unicode 16). `toUpperCase` is
+  x/text's `cases`, and since go.mod requires x/text v0.42.0 (2026-11-07) it
+  maps the Unicode 16 and 17 uppercase forms as Node does. Before, the module
+  required v0.21.0 (Unicode 15) while goenvoy and truto-jsonata-go built it
+  at v0.42.0, so these tests ran on tables no consumer used.
+  Bun 1.3.14 maps none of these: `ToLowerCaseOn` / `ToUpperCaseOn` with
+  `RuntimeBun` (above) are held to it.
 
 **Watch** (`make watch`, in `make all`): the generator runs again on Bun and on
 the installed Node, and `TestWatch` reports what differs into `WATCH.txt`

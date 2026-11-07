@@ -30,7 +30,7 @@ func TestBunContract(t *testing.T) {
 		Err string `json:"err"`
 	}](t, "testdata/bun/bun.jsonl")
 
-	lowered := map[rune]bool{}
+	lowered, uppered := map[rune]bool{}, map[rune]bool{}
 	n := 0
 	for _, c := range cases {
 		n++
@@ -42,6 +42,14 @@ func TestBunContract(t *testing.T) {
 			}
 			if got := jsbuiltin.ToLowerCaseOn(jsbuiltin.RuntimeBun, c.In); got != c.Out {
 				t.Errorf("ToLowerCaseOn(Bun, %q) = %q, Bun %q", c.In, got, c.Out)
+			}
+		case "upper", "upper-context":
+			if c.Op == "upper" {
+				r, _ := utf8.DecodeRuneInString(c.In)
+				uppered[r] = true
+			}
+			if got := jsbuiltin.ToUpperCaseOn(jsbuiltin.RuntimeBun, c.In); got != c.Out {
+				t.Errorf("ToUpperCaseOn(Bun, %q) = %q, Bun %q", c.In, got, c.Out)
 			}
 		case "uri-error":
 			f := jsbuiltin.EncodeURIComponentOn
@@ -74,6 +82,22 @@ func TestBunContract(t *testing.T) {
 		if s := string(r); jsbuiltin.ToLowerCaseOn(jsbuiltin.RuntimeBun, s) != s {
 			t.Errorf("ToLowerCaseOn(Bun, U+%04X) changes it; Bun leaves it", r)
 		}
+	}
+	if len(uppered) < 1000 {
+		t.Fatalf("thin Bun goldens: %d uppercase code points", len(uppered))
+	}
+	for r := rune(0); r <= utf8.MaxRune; r++ {
+		if (r >= 0xd800 && r <= 0xdfff) || uppered[r] {
+			continue
+		}
+		if s := string(r); jsbuiltin.ToUpperCaseOn(jsbuiltin.RuntimeBun, s) != s {
+			t.Errorf("ToUpperCaseOn(Bun, U+%04X) changes it; Bun leaves it", r)
+		}
+	}
+	// A cut around a Bun-unmapped code point keeps the rest of the string
+	// upper-cased, both sides of it.
+	if got := jsbuiltin.ToUpperCaseOn(jsbuiltin.RuntimeBun, "a\u019bßb"); got != "A\u019bSSB" {
+		t.Errorf("ToUpperCaseOn(Bun, a ƛ ß b) = %q", got)
 	}
 	t.Logf("%d Bun answers, %d lowercase code points", n, len(lowered))
 }
