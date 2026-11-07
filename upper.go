@@ -1,7 +1,9 @@
 package jsbuiltin
 
 import (
+	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -24,16 +26,34 @@ func ToUpperCase(s string) string { return ToUpperCaseOn(RuntimeV8, s) }
 // RuntimeBun is Bun 1.3.14, whose ICU predates the uppercase forms Unicode 16
 // and 17 added: the 55 code points bunNoUpper names stay as they are there
 // (testdata/bun/, TestBunContract).
+//
+// One pass: each run between two such code points is upper-cased whole, and
+// the code points themselves are written as they are. (It once recursed per
+// code point and copied the rest each time, which was quadratic and, past a
+// few MB of them, a stack overflow.)
 func ToUpperCaseOn(rt Runtime, s string) string {
-	if rt == RuntimeBun {
-		for i, r := range s {
-			if bunNoUpper(r) {
-				n := len(string(r))
-				return toUpperV8(s[:i]) + string(r) + ToUpperCaseOn(rt, s[i+n:])
-			}
-		}
+	if rt != RuntimeBun {
+		return toUpperV8(s)
 	}
-	return toUpperV8(s)
+	var b strings.Builder
+	run := 0 // start of the run not yet written
+	for i, r := range s {
+		if !bunNoUpper(r) {
+			continue
+		}
+		if b.Cap() == 0 {
+			b.Grow(len(s) + len(s)/8)
+		}
+		b.WriteString(toUpperV8(s[run:i]))
+		n := utf8.RuneLen(r)
+		b.WriteString(s[i : i+n])
+		run = i + n
+	}
+	if b.Cap() == 0 {
+		return toUpperV8(s)
+	}
+	b.WriteString(toUpperV8(s[run:]))
+	return b.String()
 }
 
 // bunNoUpper reports a code point whose uppercase form is new in Unicode 16
