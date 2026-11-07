@@ -8,6 +8,7 @@
 //                  - "lower": every code point whose toLowerCase() is not
 //                    itself, and the context strings. The list is COMPLETE:
 //                    the Go test holds every other code point to itself.
+//                  - "upper": the same for toUpperCase(), also COMPLETE.
 //                  - "uri-error": the message encodeURIComponent and
 //                    encodeURI throw for a lone surrogate (JSON cannot carry
 //                    the input, so the input is fixed: "\ud800").
@@ -33,6 +34,7 @@ for (let c = 0; c <= 0x10ffff; c++) {
   if (c >= 0xd800 && c <= 0xdfff) continue;
   const s = String.fromCodePoint(c);
   if (s.toLowerCase() !== s) add("lower", s, (x) => x.toLowerCase());
+  if (s.toUpperCase() !== s) add("upper", s, (x) => x.toUpperCase());
 }
 for (const s of [
   "S14-İΣ.example", "Aİ", "İA", "ABΣ", "X-Σ", "Hello WÖRLD",
@@ -40,6 +42,7 @@ for (const s of [
   "straße", "ŉ", "ﬀx", "ẞ", "i̇", "ǅ", "", "abc", "ABC",
 ]) {
   add("lower-context", s, (x) => x.toLowerCase());
+  add("upper-context", s, (x) => x.toUpperCase());
 }
 
 for (const f of [encodeURIComponent, encodeURI]) {

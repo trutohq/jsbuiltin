@@ -3,7 +3,7 @@ package jsbuiltin
 // Runtime names the JavaScript runtime whose answer an operation gives, where
 // runtimes differ. The package's plain functions are V8's, as Node and workerd
 // run it (their contract is testdata/, oracle/generate.mjs on Node). The ...On
-// functions take a Runtime: [ToLowerCaseOn], [EncodeURIComponentOn] and
+// functions take a Runtime: [ToLowerCaseOn], [ToUpperCaseOn], [EncodeURIComponentOn] and
 // [EncodeURIOn].
 type Runtime int
 
