@@ -41,6 +41,18 @@ Moved, with its tests, on 2026-10-31. History stays in the source repositories.
 | `base64.go` | truto-jsonata-go `fn_crypto.go` `atob` (the one that tells Node's two errors apart); replaces gotruto's `cursor.atob`, `analytics.atob`, `saml.atob`, which accept and refuse the same strings |
 | `numbervalue.go` | gotruto `internal/jsonx` `NumberValue` |
 
+## Runtimes
+
+The plain functions give V8's answers, as Node and workerd run it. Where Bun
+(JavaScriptCore, which runs Envoy) answers differently, an `...On` function
+takes a `Runtime`: `ToLowerCaseOn(RuntimeBun, s)` leaves the 27 code points
+Unicode 16 gave a lowercase form as Bun 1.3.14 does, and
+`EncodeURIComponentOn` / `EncodeURIOn` with `RuntimeBun` throw Bun's message,
+"String contained an illegal UTF-16 sequence.", where V8 says "URI
+malformed". `TestBunContract` holds them to `testdata/bun/`, which
+`oracle/bun.mjs` writes on Bun (`make bun-goldens`); its lowercase list is
+complete, so every code point it does not name must lower to itself.
+
 ## How it is checked
 
 **Contract** (`make test`): `oracle/generate.mjs` executes the runtime and
