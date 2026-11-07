@@ -25,8 +25,16 @@ import (
 //
 // Each is reproduced here. One implementation for the port: the trusted
 // client-IP header (internal/clientip) and the SSO domain (slice 14) both
-// call it.
-func ToLowerCase(s string) string {
+// call it. [ToLowerCaseOn] with [RuntimeBun] is Bun 1.3.14's.
+func ToLowerCase(s string) string { return ToLowerCaseOn(RuntimeV8, s) }
+
+// ToLowerCaseOn is `String.prototype.toLowerCase()` on runtime rt.
+// RuntimeBun is Bun 1.3.14 (JavaScriptCore over its ICU): everything
+// [ToLowerCase] does, except that the 27 code points Unicode 16 gave a
+// lowercase form (U+1C89, U+A7CB, U+A7CC, U+A7DA, U+A7DC, U+10D50…U+10D65)
+// stay as they are, as they do in Bun. testdata/bun/ holds Bun's answers
+// over every code point (oracle/bun.mjs).
+func ToLowerCaseOn(rt Runtime, s string) string {
 	upper := false
 	for i := 0; i < len(s); i++ {
 		c := s[i]
@@ -58,7 +66,7 @@ slow:
 			} else {
 				b.WriteRune(0x03C3)
 			}
-		case unicode17Lowercase(r):
+		case unicode17Lowercase(r), rt == RuntimeBun && unicode16Lowercase(r):
 			b.WriteRune(r)
 		default:
 			b.WriteRune(unicode.ToLower(r))
@@ -71,6 +79,16 @@ slow:
 // Unicode 17, which workerd's V8 does not have yet.
 func unicode17Lowercase(r rune) bool {
 	return r == 0xA7CE || r == 0xA7D2 || r == 0xA7D4 || (r >= 0x16EA0 && r <= 0x16EB8)
+}
+
+// unicode16Lowercase reports a code point whose lowercase mapping is new in
+// Unicode 16, which Bun 1.3.14 does not have.
+func unicode16Lowercase(r rune) bool {
+	switch r {
+	case 0x1C89, 0xA7CB, 0xA7CC, 0xA7DA, 0xA7DC:
+		return true
+	}
+	return r >= 0x10D50 && r <= 0x10D65
 }
 
 // finalSigma is Unicode's Final_Sigma condition for the Σ at byte offset i:

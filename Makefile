@@ -12,7 +12,7 @@ GO    ?= go
 NICE  ?= nice -n 10
 CORES ?= 2
 
-.PHONY: all fmt fmt-check vet test goldens watch known-differences
+.PHONY: all fmt fmt-check vet test goldens bun-goldens watch known-differences
 
 all: fmt-check vet test watch
 
@@ -31,6 +31,10 @@ test:
 # Goldens come from EXECUTING the runtime. Never hand-edit testdata/.
 goldens:
 	$(NICE) node oracle/generate.mjs
+
+# RuntimeBun's contract (TestBunContract): Bun's own answers, from Bun.
+bun-goldens:
+	$(NICE) bun oracle/bun.mjs
 
 known-differences:
 	-KNOWN_DIFFERENCES_WRITE=1 CGO_ENABLED=0 $(GO) test -count=1 -run '^TestContract$$' . > /dev/null

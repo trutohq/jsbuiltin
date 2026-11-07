@@ -8,9 +8,13 @@ import "strings"
 //
 // The module's one implementation: /sso-connection's DNS-over-HTTPS name and
 // the Sentinel forwarder's tenant, rule and stream segments use it.
-func EncodeURIComponent(s string) (string, error) {
+func EncodeURIComponent(s string) (string, error) { return EncodeURIComponentOn(RuntimeV8, s) }
+
+// EncodeURIComponentOn is [EncodeURIComponent] on runtime rt. The encoding is
+// the same on every runtime; the URIError's message is the runtime's own.
+func EncodeURIComponentOn(rt Runtime, s string) (string, error) {
 	if HasLoneSurrogate(s) {
-		return "", &URIError{}
+		return "", &URIError{runtime: rt}
 	}
 	var b strings.Builder
 	b.Grow(len(s))
@@ -30,9 +34,15 @@ func EncodeURIComponent(s string) (string, error) {
 }
 
 // URIError is the URIError `encodeURIComponent` throws for a lone surrogate.
-type URIError struct{}
+// Its message is the runtime's: V8's (the zero value) or JavaScriptCore's.
+type URIError struct{ runtime Runtime }
 
-func (*URIError) Error() string { return "URI malformed" }
+func (e *URIError) Error() string {
+	if e.runtime == RuntimeBun {
+		return "String contained an illegal UTF-16 sequence."
+	}
+	return "URI malformed"
+}
 
 // JSName is the class the request record's `logs` entry names.
 func (*URIError) JSName() string { return "URIError" }
@@ -40,9 +50,12 @@ func (*URIError) JSName() string { return "URIError" }
 // EncodeURI is ECMAScript's encodeURI: every character but the unreserved
 // marks and the URI's reserved delimiters (`;,/?:@&=+$#`) is UTF-8
 // percent-encoded, and a lone surrogate is the URIError.
-func EncodeURI(s string) (string, error) {
+func EncodeURI(s string) (string, error) { return EncodeURIOn(RuntimeV8, s) }
+
+// EncodeURIOn is [EncodeURI] on runtime rt, as [EncodeURIComponentOn].
+func EncodeURIOn(rt Runtime, s string) (string, error) {
 	if HasLoneSurrogate(s) {
-		return "", &URIError{}
+		return "", &URIError{runtime: rt}
 	}
 	var b strings.Builder
 	b.Grow(len(s))
